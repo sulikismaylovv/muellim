@@ -10,12 +10,19 @@ const outcomeLabels: Record<Outcome, string> = {
   'taught-not-understood': 'taught, not yet understood',
 }
 
+const setups = [
+  'MUELLIM_MODEL=anthropic/claude-haiku-5-5 with MUELLIM_API_KEY (or ANTHROPIC_API_KEY)',
+  'MUELLIM_MODEL=ollama/qwen3 for a local Ollama, no key needed',
+  'MUELLIM_MODEL=openai-compatible/<model> with MUELLIM_BASE_URL, and MUELLIM_API_KEY if the server needs one',
+]
+  .map((line) => `\n  ${line}`)
+  .join('')
+
 const errors: Record<ErrorCode, string> = {
   'not-git': 'This folder is not inside a git repository.',
   'no-session': 'No session found. Run "muellim start" first.',
-  'missing-key':
-    'No AI key found. Set ANTHROPIC_API_KEY, or MUELLIM_BASE_URL for an OpenAI-compatible server.',
-  'missing-model': 'Set MUELLIM_MODEL to the model your OpenAI-compatible server should use.',
+  'missing-key': `The provider in MUELLIM_MODEL needs a key or a server URL that is not set. Use one of these setups:${setups}`,
+  'missing-model': `Set MUELLIM_MODEL to <provider>/<model>, using one of these setups:${setups}`,
   'provider-unreachable':
     'The AI service could not be reached. Check your key, URL and network, then run again.',
   'bad-output':
