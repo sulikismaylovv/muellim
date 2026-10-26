@@ -6,7 +6,7 @@ Muellim is a learning tool, not a security gate. It never blocks a push. You run
 
 ## Status
 
-Design stage. There is no code yet. The specs live in `docs/specs/`.
+Design stage. There is no code yet.
 
 ## License
 
