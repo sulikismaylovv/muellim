@@ -26,3 +26,4 @@ From a clean checkout, at the repository root:
 ## Baseline
 
 - Gate (baseline, before Task 1): exit 0, no package.json, 0 tests.
+- Gate (phase-1, after Task 18): exit 0, Biome 55 files, tsc clean, Vitest 17 files / 148 tests.
