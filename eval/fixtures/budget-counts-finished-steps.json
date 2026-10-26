@@ -1,0 +1,35 @@
+{
+  "name": "budget-counts-finished-steps",
+  "source": "real change in the muellim repository: Task 8 review fix to src/providers/ai-sdk.ts, the budget counts each finished step",
+  "diff": "diff --git a/src/providers/ai-sdk.ts b/src/providers/ai-sdk.ts\n--- a/src/providers/ai-sdk.ts\n+++ b/src/providers/ai-sdk.ts\n@@ -2,6 +2,7 @@ import {\n   generateText,\n   type LanguageModel,\n   NoObjectGeneratedError,\n+  NoOutputGeneratedError,\n   Output,\n   stepCountIs,\n   tool,\n@@ -51,6 +52,7 @@ export function createAiSdkClient(\n     if (used.calls >= limits.maxCalls || used.inputTokens + used.outputTokens >= limits.maxTokens) {\n       throw new MuellimError('budget')\n     }\n+    let steps = 0\n     try {\n       const result = await generateText({\n         model,\n@@ -59,16 +61,23 @@ export function createAiSdkClient(\n         output: Output.object({ schema: request.schema }),\n         tools: request.lookups ? toTools(request.lookups) : {},\n         stopWhen: stepCountIs(request.lookups ? MAX_LOOKUPS + 1 : 1),\n+        prepareStep: ({ stepNumber }) =>\n+          stepNumber === MAX_LOOKUPS ? { activeTools: [] } : undefined,\n+        onStepEnd: (step) => {\n+          steps += 1\n+          used.calls += 1\n+          used.inputTokens += step.usage.inputTokens ?? 0\n+          used.outputTokens += step.usage.outputTokens ?? 0\n+        },\n         maxRetries: 1,\n       })\n-      used.calls += result.steps.length\n-      used.inputTokens += result.totalUsage.inputTokens ?? 0\n-      used.outputTokens += result.totalUsage.outputTokens ?? 0\n       return result.output\n     } catch (error) {\n       if (error instanceof MuellimError) throw error\n-      used.calls += 1\n-      if (NoObjectGeneratedError.isInstance(error)) throw new SchemaFailure(error.message)\n+      if (steps === 0) used.calls += 1\n+      if (NoObjectGeneratedError.isInstance(error) || NoOutputGeneratedError.isInstance(error)) {\n+        throw new SchemaFailure(error.message)\n+      }\n       throw new MuellimError('provider-unreachable', (error as Error).message)\n     }\n   }\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "AI budget after a failed request",
+    "prompt": "During a plan request the model makes two lookup steps, then the third request fails with a network error. What does the budget record for this attempt after the change, and what did the old code record?",
+    "choices": [],
+    "answerKey": "Now onStepEnd has already counted the two finished steps with their tokens, and because steps is not 0 the catch adds nothing, so 2 calls are recorded. The old code counted usage only after generateText returned, so on the error it added a single call and lost the tokens of the two finished steps.",
+    "rubric": [
+      "the finished steps' calls and tokens are counted as each step ends, so they stay on the budget after the error",
+      "the old code added a single call on error and dropped the usage of the steps that had finished"
+    ]
+  },
+  "answers": [
+    {
+      "text": "Two calls plus their token usage, recorded by onStepEnd as each step finished; the catch does not add another since steps > 0. Previously the catch just did calls += 1 and the tokens from the two lookup steps were never counted.",
+      "accepted": true
+    },
+    {
+      "text": "finished steps are counted live so 2 calls + tokens stay on the budget. old code: only +1 call in the catch, tokens of steps 1-2 lost",
+      "accepted": true
+    },
+    {
+      "text": "Nothing is counted, because a failed attempt does not use the budget.",
+      "accepted": false
+    },
+    {
+      "text": "Three calls, the same as before; the change only moves the counting into a callback.",
+      "accepted": false
+    }
+  ]
+}

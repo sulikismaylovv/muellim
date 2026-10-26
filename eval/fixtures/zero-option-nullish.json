@@ -1,0 +1,35 @@
+{
+  "name": "zero-option-nullish",
+  "source": "synthetic seed",
+  "diff": "diff --git a/src/client.js b/src/client.js\n--- a/src/client.js\n+++ b/src/client.js\n@@ -1,5 +1,5 @@\n export function createClient(options = {}) {\n-  const timeout = options.timeout || 5000\n-  const retries = options.retries || 3\n+  const timeout = options.timeout ?? 5000\n+  const retries = options.retries ?? 3\n   return { timeout, retries }\n }\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "default options and zero",
+    "prompt": "A caller passes { timeout: 0, retries: 0 } to turn off the timeout and retries. What did the old code configure, and what does it configure now?",
+    "choices": [],
+    "answerKey": "The old || treats 0 as falsy, so the client got timeout 5000 and retries 3 and ignored the caller. ?? falls back only for null or undefined, so timeout 0 and retries 0 are kept now.",
+    "rubric": [
+      "the old || replaced the caller's 0 values with the defaults 5000 and 3",
+      "?? falls back only for null or undefined, so the 0 values are kept now"
+    ]
+  },
+  "answers": [
+    {
+      "text": "Before: 0 is falsy so || swapped in 5000 and 3. After: ?? only defaults on null or undefined, so 0 and 0 are respected.",
+      "accepted": true
+    },
+    {
+      "text": "old ignored the zeros (got 5000/3); nullish coalescing keeps 0",
+      "accepted": true
+    },
+    {
+      "text": "Both versions use 0 for both, since 0 is a number.",
+      "accepted": false
+    },
+    {
+      "text": "The new code throws, because 0 is not a valid timeout.",
+      "accepted": false
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "lookup-link-target-tracked",
+  "source": "real change in the muellim repository: Task 11 review fix to src/engine/context.ts, readFile requires the real path to be tracked",
+  "diff": "diff --git a/src/engine/context.ts b/src/engine/context.ts\n--- a/src/engine/context.ts\n+++ b/src/engine/context.ts\n@@ -45,18 +45,19 @@ export function createLookups(git: Git, ignore: RegExp[]): LookupTools & { used(\n   let count = 0\n   const allowed = async (path: string): Promise<boolean> => {\n     const clean = posix.normalize(path)\n     if (clean.startsWith('..') || posix.isAbsolute(clean)) return false\n     return isAllowedPath(clean, ignore) && (await git.isTracked(clean))\n   }\n-  /** False when the file's real path leaves the repository or lands on a path that is not allowed. */\n+  /** False when the file's real path leaves the repository, is not allowed, or is not tracked. */\n   const realAllowed = async (clean: string): Promise<boolean> => {\n     try {\n       const root = await realpath(git.root)\n       const rel = relative(root, await realpath(join(root, clean)))\n-      return !(rel.startsWith('..') || isAbsolute(rel)) && isAllowedPath(rel, ignore)\n+      if (rel.startsWith('..') || isAbsolute(rel) || !isAllowedPath(rel, ignore)) return false\n+      return await git.isTracked(rel)\n     } catch (error) {\n       return (error as NodeJS.ErrnoException).code === 'ENOENT'\n     }\n   }\n   const hitPath = (hit: string): string | undefined => {\n     if (!hit.startsWith('\"')) return hit.slice(0, hit.indexOf(':'))\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "reading through a symbolic link",
+    "prompt": "A tracked file docs/setup.md is a symbolic link to .git/config, which holds a token in a remote URL. The AI asks readFile for docs/setup.md. What does realAllowed return now, and why were the earlier checks not enough?",
+    "choices": [],
+    "answerKey": "It returns false, so readFile answers NOT_AVAILABLE. The link resolves to .git/config, which is inside the repository and passes the name filter, but it is not tracked, and the new isTracked check on the real path refuses it. Before, the target was read and its content sent to the AI.",
+    "rubric": [
+      "the real path .git/config is not tracked, so the lookup is refused",
+      "the inside-the-repo and name checks alone let .git/config through, so its content would have reached the AI"
+    ]
+  },
+  "answers": [
+    {
+      "text": "false, so Not available. The real path is .git/config, which is not a secret name and is inside the repo, so only the new isTracked(rel) check stops it. Before, the link's target got read and sent.",
+      "accepted": true
+    },
+    {
+      "text": "refused because the resolved file is not tracked by git. the old version only checked it stayed in the repo and was not a secret name, which .git/config passes",
+      "accepted": true
+    },
+    {
+      "text": "It returns true, because docs/setup.md itself is tracked.",
+      "accepted": false
+    },
+    {
+      "text": "It returns false, because realpath throws ENOENT on symbolic links.",
+      "accepted": false
+    }
+  ]
+}

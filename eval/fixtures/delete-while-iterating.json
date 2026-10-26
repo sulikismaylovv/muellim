@@ -1,0 +1,35 @@
+{
+  "name": "delete-while-iterating",
+  "source": "synthetic seed",
+  "diff": "diff --git a/app/cache.py b/app/cache.py\n--- a/app/cache.py\n+++ b/app/cache.py\n@@ -1,4 +1,4 @@\n def evict_expired(cache, now):\n-    for key, entry in cache.items():\n+    for key, entry in list(cache.items()):\n         if entry.expires_at <= now:\n             del cache[key]\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "deleting from a dict in a loop",
+    "prompt": "The cache holds three entries and one of them has expired. What did evict_expired do before this change, and why does wrapping the items in list() fix it?",
+    "choices": [],
+    "answerKey": "Before, deleting from the dict while looping over its live items view raised RuntimeError: dictionary changed size during iteration, so eviction crashed. list() takes a snapshot of the items first, so the loop walks the copy and deleting from the dict is safe.",
+    "rubric": [
+      "the old loop raised RuntimeError because the dict changed size during iteration",
+      "list() loops over a snapshot, so deleting from the dict no longer affects the loop"
+    ]
+  },
+  "answers": [
+    {
+      "text": "It crashed with RuntimeError (dictionary changed size during iteration) on the del. list() copies the items first so you can delete from the dict while looping over the copy.",
+      "accepted": true
+    },
+    {
+      "text": "RuntimeError when deleting mid-iteration; iterating a list snapshot avoids it",
+      "accepted": true
+    },
+    {
+      "text": "It silently skipped the entry after the deleted one, but it did not crash.",
+      "accepted": false
+    },
+    {
+      "text": "Nothing went wrong; list() only makes the loop faster.",
+      "accepted": false
+    }
+  ]
+}

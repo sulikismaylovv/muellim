@@ -1,0 +1,35 @@
+{
+  "name": "muellimignore-read-error",
+  "source": "real change in the muellim repository: Task 4 review fix to src/diff/filter.ts, loadIgnore throws read errors other than a missing file",
+  "diff": "diff --git a/src/diff/filter.ts b/src/diff/filter.ts\n--- a/src/diff/filter.ts\n+++ b/src/diff/filter.ts\n@@ -51,12 +58,13 @@ export function parseIgnore(text: string): RegExp[] {\n     .map(globToRegExp)\n }\n \n-/** Reads `<root>/.muellimignore`. A missing file means no patterns. */\n+/** Reads `<root>/.muellimignore`. A missing file means no patterns; other read errors throw. */\n export async function loadIgnore(root: string): Promise<RegExp[]> {\n   try {\n     return parseIgnore(await readFile(join(root, '.muellimignore'), 'utf8'))\n-  } catch {\n-    return []\n+  } catch (error) {\n+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return []\n+    throw error\n   }\n }\n \n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "unreadable ignore file",
+    "prompt": "A user's .muellimignore exists but cannot be read, for example because it is a folder or its permissions deny reading. What does loadIgnore do now, and why is that safer than the old behaviour?",
+    "choices": [],
+    "answerKey": "It rethrows the error, so the run stops. Only a missing file (ENOENT) means no patterns. The old code returned an empty list for any error, which silently dropped the user's ignore rules and could send ignored files to the AI.",
+    "rubric": [
+      "any read error other than a missing file is thrown and stops the run",
+      "returning no patterns would silently drop the ignore rules and send files the user meant to keep from the AI"
+    ]
+  },
+  "answers": [
+    {
+      "text": "Throws instead of returning []. Only ENOENT gives an empty list. Before, an unreadable ignore file looked like no rules at all, so files the user had excluded could go to the AI.",
+      "accepted": true
+    },
+    {
+      "text": "error propagates and the run stops. returning [] on any error would quietly ignore the user's .muellimignore and leak the ignored paths",
+      "accepted": true
+    },
+    {
+      "text": "It returns an empty list and carries on, because a broken ignore file should not block the quiz.",
+      "accepted": false
+    },
+    {
+      "text": "It throws the error unless the file is missing.",
+      "accepted": false
+    }
+  ]
+}

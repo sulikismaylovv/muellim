@@ -1,0 +1,32 @@
+{
+  "name": "pagination-offset",
+  "source": "synthetic seed",
+  "diff": "diff --git a/src/list.py b/src/list.py\n--- a/src/list.py\n+++ b/src/list.py\n@@ -1,3 +1,4 @@\n-def page(items, n, size=20):\n-    return items[n * size:(n + 1) * size]\n+def page(items, n, size=20):\n+    \"\"\"Pages are numbered from 1.\"\"\"\n+    start = (n - 1) * size\n+    return items[start:start + size]\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "page numbering",
+    "prompt": "A caller that was written before this change asks for page(items, 0). What does it get now, and why?",
+    "choices": [],
+    "answerKey": "Pages now start at 1, so page 0 gives start = -20 and items[-20:0], which is an empty list. Old callers using 0 for the first page get nothing.",
+    "rubric": ["pages now start at 1 instead of 0", "page 0 now returns an empty list"]
+  },
+  "answers": [
+    {
+      "text": "An empty list. Numbering moved to start at 1, so 0 makes start -20 and the slice -20:0 is empty.",
+      "accepted": true
+    },
+    {
+      "text": "nothing comes back, because the first page is now page 1 and page 0 slices to an empty range",
+      "accepted": true
+    },
+    {
+      "text": "The first 20 items, same as before.",
+      "accepted": false
+    },
+    {
+      "text": "The last 20 items, because a negative start counts from the end.",
+      "accepted": false
+    }
+  ]
+}

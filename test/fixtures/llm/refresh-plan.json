@@ -1,0 +1,20 @@
+{
+  "questions": [
+    {
+      "kind": "open",
+      "topic": "expired access token",
+      "prompt": "A request is made with an expired access token. What does fetchWithAuth do, and why does it not loop forever?",
+      "choices": [],
+      "answerKey": "It calls refresh() once, retries the request with the new token, and gives up on a second 401 because the retry flag is set.",
+      "rubric": ["calls refresh() and retries", "stops after one retry because of the retry flag"]
+    },
+    {
+      "kind": "choice",
+      "topic": "refresh token lifetime",
+      "prompt": "How long does a refresh token live after this change?",
+      "choices": ["1 hour", "7 days", "30 days"],
+      "answerKey": "7 days",
+      "rubric": []
+    }
+  ]
+}

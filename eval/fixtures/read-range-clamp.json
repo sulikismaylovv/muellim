@@ -1,0 +1,35 @@
+{
+  "name": "read-range-clamp",
+  "source": "real change in the muellim repository: Task 11 review fix to src/engine/context.ts, readFile clamps the line range",
+  "diff": "diff --git a/src/engine/context.ts b/src/engine/context.ts\n--- a/src/engine/context.ts\n+++ b/src/engine/context.ts\n@@ -94,33 +94,37 @@ export function createLookups(git: Git, ignore: RegExp[]): LookupTools & { used(\n       return files.filter((f) => isAllowedPath(f, ignore)).join('\\n') || NOT_AVAILABLE\n     },\n \n     async readFile(path, fromLine, toLine) {\n       if (!spend()) return LOOKUP_LIMIT_REACHED\n       if (!(await allowed(path))) return NOT_AVAILABLE\n       const clean = posix.normalize(path)\n       if (!(await realAllowed(clean))) return NOT_AVAILABLE\n       let content: string\n       try {\n         content = await git.readFile(clean)\n       } catch (error) {\n         if ((error as NodeJS.ErrnoException).code === 'ENOENT') return NOT_AVAILABLE\n         throw error\n       }\n+      if (!Number.isFinite(fromLine) || !Number.isFinite(toLine)) return ''\n       const lines = content.split('\\n')\n       const from = Math.max(1, Math.floor(fromLine))\n-      const to = Math.min(lines.length, Math.floor(toLine), from + READ_LINE_CAP - 1)\n+      const to = Math.max(\n+        from - 1,\n+        Math.min(lines.length, Math.floor(toLine), from + READ_LINE_CAP - 1),\n+      )\n       return lines\n         .slice(from - 1, to)\n         .map((line, i) => `${from + i}: ${line}`)\n         .join('\\n')\n     },\n \n     async search(text) {\n       if (!spend()) return LOOKUP_LIMIT_REACHED\n       const hits = await git.grep(text)\n       const safe: string[] = []\n       for (const hit of hits) {\n         const path = hitPath(hit)\n         if (path !== undefined && isAllowedPath(path, ignore) && (await realInside(path)))\n           safe.push(hit)\n       }\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "negative end line in a lookup",
+    "prompt": "The AI calls readFile on a tracked 1,000-line file with fromLine 50 and toLine -1. How many lines come back now, and what did the old const to = Math.min(...) line return for the same call?",
+    "choices": [],
+    "answerKey": "None: to is clamped to at least from - 1, which is 49, so slice(49, 49) is empty. Before, to was -1, and slice(49, -1) counts from the end, so it returned everything from line 50 to the end of the file but one line, about 950 lines, far past the 200-line cap.",
+    "rubric": [
+      "the call now returns no lines because to is clamped to at least from - 1",
+      "the old code passed a negative end to slice, which counts from the end and returned hundreds of lines past the 200-line cap"
+    ]
+  },
+  "answers": [
+    {
+      "text": "Zero lines. to becomes max(from - 1, -1) = 49 so the slice is empty. The old code did slice(49, -1), and a negative end means \"from the end\", so it returned about 950 lines and went way over the 200-line cap.",
+      "accepted": true
+    },
+    {
+      "text": "empty result now. before: negative toLine, slice counted from the end, so almost the whole file from line 50 came back, way over READ_LINE_CAP",
+      "accepted": true
+    },
+    {
+      "text": "200 lines, because READ_LINE_CAP always applies.",
+      "accepted": false
+    },
+    {
+      "text": "It throws a RangeError for the negative line number.",
+      "accepted": false
+    }
+  ]
+}

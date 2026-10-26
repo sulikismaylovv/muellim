@@ -1,0 +1,35 @@
+{
+  "name": "pass-after-interrupt",
+  "source": "real change in the muellim repository: fix(cli): refuse a pass after Ctrl-C closed the run",
+  "diff": "diff --git a/src/cli.ts b/src/cli.ts\n--- a/src/cli.ts\n+++ b/src/cli.ts\n@@ -61,28 +61,30 @@ export async function main(argv: string[], cli: CliEnv): Promise<number> {\n   const guarded = (inner: Transcript): Transcript => {\n     guard = {\n       begin: async (kind) => {\n         begun = true\n         try {\n           await inner.begin(kind)\n         } catch (error) {\n           begun = false\n           throw error\n         }\n       },\n       answerKeys: (questions) => inner.answerKeys(questions),\n       result: (index, result) => inner.result(index, result),\n       passed: async (score, notQuizzedChunks) => {\n+        // A reply that lands after Ctrl-C must not pass the run that was reported as stopped.\n+        if (closed) throw new MuellimError('aborted')\n         closed = true\n         try {\n           await inner.passed(score, notQuizzedChunks)\n         } catch (error) {\n           closed = false\n           throw error\n         }\n       },\n       abandoned: async () => {\n         if (closed) return\n         closed = true\n         await inner.abandoned()\n       },\n     }\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "late reply after Ctrl-C",
+    "prompt": "The user presses Ctrl-C while the last grade is being fetched. The CLI reports the run as stopped and the guard writes the abandoned line. Then the grade arrives and the quiz calls passed(). What happens now, and why was the check added?",
+    "choices": [],
+    "answerKey": "passed() sees that closed is already true and throws MuellimError('aborted'), so the run is not written as passed and no keys are marked. Without the check, a reply that lands after Ctrl-C would pass the run the user was told had stopped.",
+    "rubric": [
+      "passed throws aborted because closed was already set when the run was abandoned",
+      "without it, a late reply would mark the run passed after the user was told nothing was passed"
+    ]
+  },
+  "answers": [
+    {
+      "text": "closed is already true from the abandon, so passed throws an aborted error and nothing gets marked. The check stops a late AI reply from passing a run we already told the user was stopped.",
+      "accepted": true
+    },
+    {
+      "text": "throws MuellimError aborted, so no pass. otherwise the late grade would still mark it passed despite the \"nothing was marked\" message",
+      "accepted": true
+    },
+    {
+      "text": "passed sets closed to true and writes the passed status, since the quiz finished all its questions.",
+      "accepted": false
+    },
+    {
+      "text": "It waits for the user to confirm whether to keep the pass.",
+      "accepted": false
+    }
+  ]
+}
