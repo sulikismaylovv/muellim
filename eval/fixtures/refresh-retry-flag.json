@@ -1,0 +1,35 @@
+{
+  "name": "refresh-retry-flag",
+  "source": "synthetic seed",
+  "diff": "diff --git a/src/http.ts b/src/http.ts\n--- a/src/http.ts\n+++ b/src/http.ts\n@@ -1,6 +1,11 @@\n-export async function fetchWithAuth(url: string) {\n-  return fetch(url, { headers: { authorization: token() } })\n+export async function fetchWithAuth(url: string, retried = false): Promise<Response> {\n+  const res = await fetch(url, { headers: { authorization: token() } })\n+  if (res.status === 401 && !retried) {\n+    await refresh()\n+    return fetchWithAuth(url, true)\n+  }\n+  return res\n }\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "expired access token",
+    "prompt": "fetchWithAuth gets a 401 because the access token expired. What happens next, and what stops it from looping forever if refresh() also fails to fix it?",
+    "choices": [],
+    "answerKey": "It calls refresh() and calls itself once more with retried = true. A second 401 is returned to the caller because the retried flag skips the refresh branch.",
+    "rubric": [
+      "calls refresh() and retries the request",
+      "the retried flag stops a second refresh, so a second 401 is returned"
+    ]
+  },
+  "answers": [
+    {
+      "text": "It refreshes the token and tries again once. The second call has retried=true, so if it is still 401 it just returns that response.",
+      "accepted": true
+    },
+    {
+      "text": "refresh, then recursive call with retried true; that flag means no second refresh, the 401 goes back to the caller",
+      "accepted": true
+    },
+    {
+      "text": "It refreshes the token and retries until the request succeeds.",
+      "accepted": false
+    },
+    {
+      "text": "It throws an error so the caller can log the user out.",
+      "accepted": false
+    }
+  ]
+}

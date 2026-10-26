@@ -1,0 +1,32 @@
+{
+  "name": "debounce-reset",
+  "source": "synthetic seed",
+  "diff": "diff --git a/src/search.js b/src/search.js\n--- a/src/search.js\n+++ b/src/search.js\n@@ -1,5 +1,8 @@\n-export function onType(query) {\n-  search(query)\n+let timer\n+export function onType(query) {\n+  clearTimeout(timer)\n+  timer = setTimeout(() => search(query), 300)\n }\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "debounced search",
+    "prompt": "A user types five letters quickly, 100 ms apart, then stops. How many times does search run, with which query, and why?",
+    "choices": [],
+    "answerKey": "Once, 300 ms after the last key, with the full five-letter query. Each keystroke clears the pending timer, so only the last one fires.",
+    "rubric": ["search runs once, with the final query", "each keystroke clears the previous timer"]
+  },
+  "answers": [
+    {
+      "text": "Just once, with all five letters, because every keypress cancels the previous timeout and only the last timer survives.",
+      "accepted": true
+    },
+    {
+      "text": "one search for the whole word, 300ms after typing stops, since clearTimeout resets it each time",
+      "accepted": true
+    },
+    {
+      "text": "Five times, once per letter, each delayed by 300 ms.",
+      "accepted": false
+    },
+    {
+      "text": "Once, with only the first letter, because the timer starts on the first key.",
+      "accepted": false
+    }
+  ]
+}
