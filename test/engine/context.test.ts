@@ -299,6 +299,41 @@ describe('rulings 12 and 13', () => {
   })
 })
 
+describe('final review issue 1', () => {
+  it.each([
+    ['color.ui', 'always'],
+    ['color.grep', 'always'],
+  ])('keeps secret search hits out and counts words under %s=%s', async (key, value) => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'muellim-ctx-')))
+    try {
+      const sh = (...args: string[]) => execFileSync('git', args, { cwd: dir, encoding: 'utf8' })
+      sh('init', '-q', '-b', 'main')
+      sh('config', key, value)
+      await mkdir(join(dir, 'src'))
+      await writeFile(join(dir, '.env'), 'API_KEY=SECRET_ENV_VALUE\n')
+      await writeFile(join(dir, 'src/a.ts'), 'export const key = process.env.API_KEY\n')
+      sh('add', '-f', '.env', 'src/a.ts')
+      const git = createGit(dir)
+      const lookups = createLookups(git, [])
+      expect(await lookups.search('SECRET_ENV_VALUE')).toBe(NOT_AVAILABLE)
+      expect(await lookups.search('API_KEY')).toBe(
+        'src/a.ts:1:export const key = process.env.API_KEY',
+      )
+      expect(await git.countWord('API_KEY')).toBe(2)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('leaves out a search hit whose path is neither on disk nor tracked', async () => {
+    const git: Git = {
+      ...fakeGit,
+      grep: async () => ['\u001b[35m.env\u001b[m\u001b[36m:1:token', 'src/a.ts:1:token'],
+    }
+    expect(await createLookups(git, []).search('token')).toBe('src/a.ts:1:token')
+  })
+})
+
 describe('ruling 14', () => {
   it('reads no lines for a negative, reversed or non-finite range', async () => {
     const read = (from: number, to: number) =>

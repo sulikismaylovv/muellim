@@ -68,7 +68,7 @@ export function createLookups(git: Git, ignore: RegExp[]): LookupTools & { used(
     return undefined
   }
   /** False when the hit's real path leaves the repository, is not allowed, or crossed a link to an
-   * untracked file; ENOENT keeps it. */
+   * untracked file. A path that is not on disk is kept only when git tracks it. */
   const realInside = async (path: string): Promise<boolean> => {
     try {
       const root = await realpath(git.root)
@@ -76,7 +76,8 @@ export function createLookups(git: Git, ignore: RegExp[]): LookupTools & { used(
       if (rel.startsWith('..') || isAbsolute(rel) || !isAllowedPath(rel, ignore)) return false
       return rel.normalize('NFC') === path.normalize('NFC') || (await git.isTracked(rel))
     } catch (error) {
-      return (error as NodeJS.ErrnoException).code === 'ENOENT'
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') return false
+      return git.isTracked(path)
     }
   }
   const spend = (): boolean => {

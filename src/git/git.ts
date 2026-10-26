@@ -102,12 +102,16 @@ export function createGit(root: string): Git {
     },
 
     async grep(text) {
-      const out = await git(root, ['grep', '-n', '-I', '-F', '--max-count=5', '-e', text], [0, 1])
+      const out = await git(
+        root,
+        ['grep', '--no-color', '-n', '-I', '-F', '--max-count=5', '-e', text],
+        [0, 1],
+      )
       return out.split('\n').filter(Boolean).slice(0, 50)
     },
 
     async countWord(word) {
-      const out = await git(root, ['grep', '-c', '-w', '-F', '-e', word], [0, 1])
+      const out = await git(root, ['grep', '--no-color', '-c', '-w', '-F', '-e', word], [0, 1])
       return out
         .split('\n')
         .filter(Boolean)
