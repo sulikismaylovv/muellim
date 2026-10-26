@@ -65,12 +65,9 @@ describe('isSecretPath', () => {
     'src/environment.ts',
     'infra/main.tf',
     'src/dotenv.ts',
-  ])(
-    'treats %s as ordinary code',
-    (path) => {
-      expect(isSecretPath(path)).toBe(false)
-    },
-  )
+  ])('treats %s as ordinary code', (path) => {
+    expect(isSecretPath(path)).toBe(false)
+  })
 })
 
 describe('globToRegExp', () => {
