@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { parseDiff } from '../../src/diff/chunks.js'
+import { filterChunks, parseIgnore } from '../../src/diff/filter.js'
 import { MuellimError } from '../../src/errors.js'
 import { EMPTY_TREE, type Git, openGit } from '../../src/git/git.js'
 
@@ -51,6 +52,28 @@ describe('diffSince', () => {
       ['src/new.ts', 1, 0],
     ])
   })
+
+  it.each<Record<string, string>>([
+    { 'diff.mnemonicPrefix': 'true' },
+    { 'diff.srcPrefix': 'x/', 'diff.dstPrefix': 'y/' },
+  ])(
+    'keeps a/ and b/ paths under the user config %j, so the filters still match',
+    async (config) => {
+      for (const [key, value] of Object.entries(config)) sh('config', key, value)
+      await commitFile('secrets/prod.yml', 'token: one\n')
+      await commitFile('src/a.ts', 'export const a = 1\n')
+      const git = await openGit(dir)
+      const base = await git.baseCommit()
+      await writeFile(join(dir, 'secrets/prod.yml'), 'token: two\n')
+      await writeFile(join(dir, 'src/a.ts'), 'export const a = 2\n')
+      await writeFile(join(dir, 'src/new.ts'), 'export const n = 1\n')
+      await mkdir(join(dir, '.muellim'))
+      await writeFile(join(dir, '.muellim/transcript.md'), '- Expected: 7 days\n')
+      const chunks = parseDiff(await git.diffSince(base))
+      const kept = filterChunks(chunks, parseIgnore('/secrets/\n'))
+      expect(kept.map((c) => c.file)).toEqual(['src/a.ts', 'src/new.ts'])
+    },
+  )
 
   it('shows the whole enclosing function as context', async () => {
     const body = Array.from({ length: 12 }, (_, i) => `  const v${i} = ${i}`).join('\n')

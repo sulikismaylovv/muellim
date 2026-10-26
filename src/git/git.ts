@@ -9,6 +9,9 @@ const run = promisify(execFile)
 /** The hash of git's empty tree: the base for a repository with no commits. */
 export const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 
+/** Fixed `a/` and `b/` paths whatever the user's diff config, so the path filters match. */
+const PLAIN_DIFF = ['--no-color', '--src-prefix=a/', '--dst-prefix=b/']
+
 export interface Git {
   readonly root: string
   /** Where the branch left the default branch, or HEAD when there is no default branch. */
@@ -71,7 +74,7 @@ export function createGit(root: string): Git {
     async diffSince(base) {
       const tracked = await git(root, [
         'diff',
-        '--no-color',
+        ...PLAIN_DIFF,
         '--no-ext-diff',
         '--function-context',
         base,
@@ -82,7 +85,7 @@ export function createGit(root: string): Git {
       const added: string[] = []
       for (const path of untracked) {
         added.push(
-          await git(root, ['diff', '--no-color', '--no-index', '--', '/dev/null', path], [0, 1]),
+          await git(root, ['diff', ...PLAIN_DIFF, '--no-index', '--', '/dev/null', path], [0, 1]),
         )
       }
       return [tracked, ...added].join('')
