@@ -5,7 +5,9 @@ import type { Chunk } from '../types.js'
 /** Paths Muellim never sends to the AI, even when they are part of the change. Case is ignored. */
 const SECRET_PATTERNS: RegExp[] = [
   /(^|\/)\.env[^/]*$/i,
-  /\.(pem|key|p12|pfx|jks|keystore|ppk|p8)$/i,
+  /\.(pem|key|p12|pfx|jks|keystore|ppk|p8|env|tfvars|tfstate)$/i,
+  /\.(tfvars\.json|tfstate\.backup)$/i,
+  /(^|\/)\.htpasswd$/i,
   /(^|\/)id_[a-z0-9_]+(\.pub)?$/i,
   /(^|\/)\.npmrc$/i,
   /(^|\/)\.netrc$/i,

@@ -45,11 +45,27 @@ describe('isSecretPath', () => {
     'keys/server.ppk',
     'AuthKey_ABC.p8',
     'secring.gpg',
+    'prod.env',
+    'config/app.env',
+    'terraform.tfvars',
+    'envs/prod.auto.tfvars',
+    'terraform.tfvars.json',
+    'terraform.tfstate',
+    'infra/terraform.tfstate.backup',
+    '.htpasswd',
+    'conf/.htpasswd',
   ])('treats %s as a secret', (path) => {
     expect(isSecretPath(path)).toBe(true)
   })
 
-  it.each(['src/env.ts', 'src/id_utils.ts', 'docs/keys.md', 'src/environment.ts'])(
+  it.each([
+    'src/env.ts',
+    'src/id_utils.ts',
+    'docs/keys.md',
+    'src/environment.ts',
+    'infra/main.tf',
+    'src/dotenv.ts',
+  ])(
     'treats %s as ordinary code',
     (path) => {
       expect(isSecretPath(path)).toBe(false)
