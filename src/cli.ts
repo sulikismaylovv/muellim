@@ -72,6 +72,8 @@ export async function main(argv: string[], cli: CliEnv): Promise<number> {
       answerKeys: (questions) => inner.answerKeys(questions),
       result: (index, result) => inner.result(index, result),
       passed: async (score, notQuizzedChunks) => {
+        // A reply that lands after Ctrl-C must not pass the run that was reported as stopped.
+        if (closed) throw new MuellimError('aborted')
         closed = true
         try {
           await inner.passed(score, notQuizzedChunks)

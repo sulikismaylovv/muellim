@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { type CliEnv, main, VERSION } from '../src/cli.js'
 import { MuellimError } from '../src/errors.js'
 import type { LlmClient, LlmRequest } from '../src/providers/llm.js'
+import { loadSession } from '../src/session/store.js'
 import type { Transcript } from '../src/session/transcript.js'
 import { createTranscript } from '../src/session/transcript.js'
 import { en } from '../src/strings/en.js'
@@ -176,5 +177,51 @@ describe('main', () => {
     expect(err).toEqual([en.errors.aborted])
     const transcript = await readFile(join(repo.dir, '.muellim', 'transcript.md'), 'utf8')
     expect(transcript.split(en.transcript.abandoned).length - 1).toBe(1)
+  })
+
+  it('writes no passed line and marks nothing passed when the AI reply lands after Ctrl-C', async () => {
+    const repo = await tempRepo()
+    const fake = new FakeLlm({ plan: [onePlan] })
+    let release: () => void = () => {}
+    let called: () => void = () => {}
+    const generateCalled = new Promise<void>((resolve) => {
+      called = resolve
+    })
+    const late: LlmClient = {
+      generate: async <T>(request: LlmRequest<T>) => {
+        called()
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+        return fake.generate(request)
+      },
+      usage: () => fake.usage(),
+    }
+    const { env, err } = cliEnv(repo.dir, () => late)
+    let interrupt: () => void = () => {}
+    env.onInterrupt = (handler) => {
+      interrupt = handler
+      return () => {}
+    }
+    const makeDeps = env.makeDeps
+    env.makeDeps = (git) => {
+      const app = makeDeps(git)
+      return { ...app, asker: new ScriptedAsker(['7 days']) }
+    }
+    await main(['start', '--goal', 'x', '--focus', ''], env)
+    await repo.write('src/a.ts', 'export const a = 1\n')
+    const before = (await loadSession(repo.dir))?.passed
+    const running = main(['check'], env)
+    await generateCalled
+    interrupt()
+    expect(await running).toBe(1)
+    expect(err).toEqual([en.errors.aborted])
+    // The AI reply lands after main returned; the command carries on in the background.
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    const transcript = await readFile(join(repo.dir, '.muellim', 'transcript.md'), 'utf8')
+    expect(transcript).not.toContain('**Status:** passed')
+    expect(transcript.split(en.transcript.abandoned).length - 1).toBe(1)
+    expect((await loadSession(repo.dir))?.passed).toEqual(before)
   })
 })
