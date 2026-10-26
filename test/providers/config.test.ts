@@ -32,6 +32,17 @@ describe('readConfig', () => {
     })
   })
 
+  it('prefers MUELLIM_BASE_URL over an ANTHROPIC_API_KEY that is also set', () => {
+    const env = { ANTHROPIC_API_KEY: 'sk-test', MUELLIM_BASE_URL: 'http://localhost:1234/v1' }
+    expect(readConfig({ ...env, MUELLIM_MODEL: 'qwen3' })).toEqual({
+      provider: 'openai-compatible',
+      model: 'qwen3',
+      baseURL: 'http://localhost:1234/v1',
+      apiKey: undefined,
+    })
+    expect(codeOf(() => readConfig(env))).toBe('missing-model')
+  })
+
   it('lets MUELLIM_PROVIDER choose when both are set', () => {
     const config = readConfig({
       ANTHROPIC_API_KEY: 'sk-test',
@@ -40,6 +51,13 @@ describe('readConfig', () => {
       MUELLIM_PROVIDER: 'openai-compatible',
     })
     expect(config.provider).toBe('openai-compatible')
+    expect(
+      readConfig({
+        ANTHROPIC_API_KEY: 'sk-test',
+        MUELLIM_BASE_URL: 'http://localhost:1234/v1',
+        MUELLIM_PROVIDER: 'anthropic',
+      }).provider,
+    ).toBe('anthropic')
   })
 
   it('fails with missing-key when nothing is set, and missing-model without a model', () => {

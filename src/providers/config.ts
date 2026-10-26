@@ -13,12 +13,13 @@ export type ProviderConfig =
  * Reads the provider from the environment. The user brings their own key:
  * ANTHROPIC_API_KEY, or MUELLIM_BASE_URL (+ MUELLIM_MODEL, optional MUELLIM_API_KEY)
  * for any OpenAI-compatible server such as OpenAI, Ollama, LM Studio or OpenRouter.
- * MUELLIM_PROVIDER picks one when both are set.
+ * When both are set, MUELLIM_BASE_URL wins, so code meant for a local server never goes to a
+ * paid service just because a key is in the environment. MUELLIM_PROVIDER overrides the choice.
  */
 export function readConfig(env: NodeJS.ProcessEnv): ProviderConfig {
   const provider =
     env.MUELLIM_PROVIDER ??
-    (env.ANTHROPIC_API_KEY ? 'anthropic' : env.MUELLIM_BASE_URL ? 'openai-compatible' : undefined)
+    (env.MUELLIM_BASE_URL ? 'openai-compatible' : env.ANTHROPIC_API_KEY ? 'anthropic' : undefined)
 
   if (provider === 'anthropic') {
     if (!env.ANTHROPIC_API_KEY) throw new MuellimError('missing-key', 'ANTHROPIC_API_KEY')
