@@ -1,7 +1,7 @@
 import { appendFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { en } from '../strings/en.js'
-import type { Question, QuestionResult, RunKind, Score } from '../types.js'
+import type { Chunk, Question, QuestionResult, RunKind, Score } from '../types.js'
 import { STATE_DIR } from './store.js'
 
 /** Appends each run to `.muellim/transcript.md`. Spec 3 renders this file as the PDF. */
@@ -10,7 +10,8 @@ export interface Transcript {
   /** Called before the first question is shown, so the keys are on disk before any answer. */
   answerKeys(questions: Question[]): Promise<void>
   result(index: number, result: QuestionResult): Promise<void>
-  passed(score: Score, notQuizzedChunks: number): Promise<void>
+  /** Lists the chunks over the question limit, which count as covered without a question. */
+  passed(score: Score, notQuizzed: readonly Chunk[]): Promise<void>
   abandoned(): Promise<void>
 }
 
@@ -45,10 +46,16 @@ export function createTranscript(root: string, now: () => Date = () => new Date(
         t.outcome(r.outcome),
       ]),
 
-    passed: (score, notQuizzedChunks) =>
+    passed: (score, notQuizzed) =>
       append([
         t.passed(score),
-        ...(notQuizzedChunks > 0 ? ['', t.notQuizzed(notQuizzedChunks)] : []),
+        ...(notQuizzed.length > 0
+          ? [
+              '',
+              t.notQuizzed(notQuizzed.length),
+              ...notQuizzed.map((c) => t.notQuizzedLine(c.file, c.header)),
+            ]
+          : []),
       ]),
 
     abandoned: () => append([t.abandoned]),

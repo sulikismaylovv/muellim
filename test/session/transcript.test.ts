@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createTranscript } from '../../src/session/transcript.js'
-import type { Question } from '../../src/types.js'
+import type { Chunk, Question } from '../../src/types.js'
 
 const question: Question = {
   id: 'q1',
@@ -14,6 +14,15 @@ const question: Question = {
   answerKey: '7 days',
   rubric: [],
 }
+
+const chunk = (file: string, header: string): Chunk => ({
+  file,
+  header,
+  lines: ['+x'],
+  added: 1,
+  removed: 0,
+  lineKeys: [`${file}-1`],
+})
 
 const roots: string[] = []
 
@@ -42,14 +51,31 @@ describe('transcript', () => {
       retryGrade: { correct: true, feedback: 'Right.' },
       outcome: 'correct-on-retry',
     })
-    await transcript.passed({ firstTry: 0, onRetry: 1, taught: 0, total: 1 }, 2)
+    await transcript.passed({ firstTry: 0, onRetry: 1, taught: 0, total: 1 }, [
+      chunk('src/b.ts', '@@ -10,6 +10,8 @@ export function b() {'),
+      chunk('src/c.ts', '@@ -0,0 +1 @@'),
+    ])
     const text = await readFile(join(root, '.muellim/transcript.md'), 'utf8')
     expect(text).toContain('## check run, 2026-10-26T12:00:00.000Z')
     expect(text.indexOf('- Expected: 7 days')).toBeLessThan(text.indexOf('- First answer: 1 hour'))
     expect(text).toContain('- Choices: 1 hour | 7 days | 30 days')
     expect(text).toContain('- Outcome: correct on retry')
     expect(text).toContain('**Status:** passed. 0 right first time, 1 right on retry')
-    expect(text).toContain('2 chunks over the question limit were not quizzed.')
+    expect(text).toContain(
+      [
+        '2 chunks over the question limit were not quizzed:',
+        '- src/b.ts @@ -10,6 +10,8 @@ export function b() {',
+        '- src/c.ts @@ -0,0 +1 @@',
+      ].join('\n'),
+    )
+  })
+
+  it('writes no not-quizzed list when every chunk was quizzed', async () => {
+    const root = await tempRoot()
+    const transcript = createTranscript(root)
+    await transcript.passed({ firstTry: 1, onRetry: 0, taught: 0, total: 1 }, [])
+    const text = await readFile(join(root, '.muellim/transcript.md'), 'utf8')
+    expect(text).not.toContain('not quizzed')
   })
 
   it('appends runs and marks an abandoned one', async () => {

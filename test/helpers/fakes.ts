@@ -63,7 +63,7 @@ export function recordingTranscript(log: string[]): Transcript {
     begin: async (kind) => void log.push(`begin:${kind}`),
     answerKeys: async (qs) => void log.push(`keys:${qs.length}`),
     result: async (i, r) => void log.push(`result:${i}:${r.outcome}`),
-    passed: async (s, n) => void log.push(`passed:${s.total}:${n}`),
+    passed: async (s, n) => void log.push(`passed:${s.total}:${n.length}`),
     abandoned: async () => void log.push('abandoned'),
   }
 }

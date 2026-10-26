@@ -139,7 +139,7 @@ export async function runQuiz(
       results.push(result)
     }
     const score = scoreOf(results)
-    await deps.transcript.passed(score, bundle.notQuizzed.length)
+    await deps.transcript.passed(score, bundle.notQuizzed)
     return {
       kind,
       status: 'passed',
