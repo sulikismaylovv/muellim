@@ -1,0 +1,35 @@
+{
+  "name": "session-corrupt-json",
+  "source": "real change in the muellim repository: Task 7 review fix to src/session/store.ts, loadSession returns null only for a missing file",
+  "diff": "diff --git a/src/session/store.ts b/src/session/store.ts\n--- a/src/session/store.ts\n+++ b/src/session/store.ts\n@@ -11,11 +11,13 @@ async function writeJson(root: string, name: string, value: unknown): Promise<st\n   return relative\n }\n \n+/** Reads `.muellim/session.json`. A missing file means no session; other read or parse errors throw. */\n export async function loadSession(root: string): Promise<Session | null> {\n   try {\n     return JSON.parse(await readFile(join(root, STATE_DIR, 'session.json'), 'utf8')) as Session\n-  } catch {\n-    return null\n+  } catch (error) {\n+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null\n+    throw error\n   }\n }\n \n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "damaged session file",
+    "prompt": ".muellim/session.json holds half-written JSON after a crash. What does loadSession do now, and what would the old return null have led to?",
+    "choices": [],
+    "answerKey": "It rejects with the parse error, so the command fails and the damage is visible. With null, Muellim treated the damaged file as no session and told the user to run start, and a new start overwrites the file and loses every recorded pass.",
+    "rubric": [
+      "a read or parse error other than a missing file now rejects instead of returning null",
+      "returning null hid the damage by treating it as no session, which leads the user to start again and lose the recorded passes"
+    ]
+  },
+  "answers": [
+    {
+      "text": "It throws now; only a missing file returns null. The old code would say there is no session, so you would run start again and wipe the passed keys without knowing the file was broken.",
+      "accepted": true
+    },
+    {
+      "text": "rejects with the JSON error. null hid the corruption, then \"run muellim start\", then a fresh session overwrites your passes",
+      "accepted": true
+    },
+    {
+      "text": "It returns null, so Muellim starts a fresh session automatically.",
+      "accepted": false
+    },
+    {
+      "text": "It throws, because JSON.parse cannot fail on a file Muellim wrote itself.",
+      "accepted": false
+    }
+  ]
+}

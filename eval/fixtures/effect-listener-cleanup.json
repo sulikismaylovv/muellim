@@ -1,0 +1,35 @@
+{
+  "name": "effect-listener-cleanup",
+  "source": "synthetic seed",
+  "diff": "diff --git a/src/useWindowWidth.js b/src/useWindowWidth.js\n--- a/src/useWindowWidth.js\n+++ b/src/useWindowWidth.js\n@@ -5,6 +5,7 @@ export function useWindowWidth() {\n   useEffect(() => {\n     const onResize = () => setWidth(window.innerWidth)\n     window.addEventListener('resize', onResize)\n+    return () => window.removeEventListener('resize', onResize)\n   }, [])\n   return width\n }\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "effect cleanup",
+    "prompt": "A page mounts and unmounts a component that uses useWindowWidth ten times, then the window is resized. What happened with the old code, and what does the returned function change?",
+    "choices": [],
+    "answerKey": "With the old code all ten resize listeners stayed attached after unmount, so one resize ran ten handlers that call setWidth for components that are gone, and the listeners leaked. The returned function is the effect's cleanup: React calls it on unmount, so the listener is removed and only mounted components listen.",
+    "rubric": [
+      "without cleanup every mount left a resize listener behind, so they pile up and keep calling setWidth after unmount",
+      "the returned function is the effect cleanup, which removes the listener on unmount"
+    ]
+  },
+  "answers": [
+    {
+      "text": "Old: each mount adds a listener that is never removed, so after 10 mounts a resize fires 10 stale handlers calling setWidth on unmounted components. New: the effect's cleanup removes the listener on unmount.",
+      "accepted": true
+    },
+    {
+      "text": "listeners leaked and stacked up; the cleanup fn now runs on unmount and detaches it",
+      "accepted": true
+    },
+    {
+      "text": "The old code added a new listener on every render, because the effect has no dependencies.",
+      "accepted": false
+    },
+    {
+      "text": "Nothing went wrong; React removes window listeners automatically when a component unmounts.",
+      "accepted": false
+    }
+  ]
+}

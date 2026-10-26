@@ -1,0 +1,35 @@
+{
+  "name": "provider-order",
+  "source": "real change in the muellim repository: fix(providers): prefer MUELLIM_BASE_URL over a stray ANTHROPIC_API_KEY",
+  "diff": "diff --git a/src/providers/config.ts b/src/providers/config.ts\n--- a/src/providers/config.ts\n+++ b/src/providers/config.ts\n@@ -13,12 +13,13 @@ export type ProviderConfig =\n  * Reads the provider from the environment. The user brings their own key:\n  * ANTHROPIC_API_KEY, or MUELLIM_BASE_URL (+ MUELLIM_MODEL, optional MUELLIM_API_KEY)\n  * for any OpenAI-compatible server such as OpenAI, Ollama, LM Studio or OpenRouter.\n- * MUELLIM_PROVIDER picks one when both are set.\n+ * When both are set, MUELLIM_BASE_URL wins, so code meant for a local server never goes to a\n+ * paid service just because a key is in the environment. MUELLIM_PROVIDER overrides the choice.\n  */\n export function readConfig(env: NodeJS.ProcessEnv): ProviderConfig {\n   const provider =\n     env.MUELLIM_PROVIDER ??\n-    (env.ANTHROPIC_API_KEY ? 'anthropic' : env.MUELLIM_BASE_URL ? 'openai-compatible' : undefined)\n+    (env.MUELLIM_BASE_URL ? 'openai-compatible' : env.ANTHROPIC_API_KEY ? 'anthropic' : undefined)\n \n   if (provider === 'anthropic') {\n     if (!env.ANTHROPIC_API_KEY) throw new MuellimError('missing-key', 'ANTHROPIC_API_KEY')\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "choosing the AI provider",
+    "prompt": "A developer has ANTHROPIC_API_KEY exported for other tools and sets MUELLIM_BASE_URL to their local Ollama server, with no MUELLIM_PROVIDER and no MUELLIM_MODEL. What does readConfig do now, and what did the old order do?",
+    "choices": [],
+    "answerKey": "It picks the OpenAI-compatible route because MUELLIM_BASE_URL now wins, and stops with missing-model because MUELLIM_MODEL is unset. The old order picked Anthropic whenever its key was set, so the run would have sent the code to Anthropic on the default model and billed that key.",
+    "rubric": [
+      "MUELLIM_BASE_URL now wins, and with no MUELLIM_MODEL the run stops with missing-model",
+      "the old order chose Anthropic because the key was present, sending the code to a paid service the user did not pick"
+    ]
+  },
+  "answers": [
+    {
+      "text": "It chooses openai-compatible since the base URL takes priority now, then throws missing-model because MUELLIM_MODEL is not set. Before, the stray Anthropic key won and the code went to Anthropic on Haiku, billed to that key.",
+      "accepted": true
+    },
+    {
+      "text": "local route chosen, then an error asking for MUELLIM_MODEL. previously ANTHROPIC_API_KEY beat the base URL so it silently used paid Anthropic",
+      "accepted": true
+    },
+    {
+      "text": "It uses Anthropic, because an API key always beats a URL.",
+      "accepted": false
+    },
+    {
+      "text": "It uses the Ollama server with the default model claude-haiku-5-5.",
+      "accepted": false
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "mutable-default-argument",
+  "source": "synthetic seed",
+  "diff": "diff --git a/app/tags.py b/app/tags.py\n--- a/app/tags.py\n+++ b/app/tags.py\n@@ -1,3 +1,5 @@\n-def add_tag(tag, tags=[]):\n+def add_tag(tag, tags=None):\n+    if tags is None:\n+        tags = []\n     tags.append(tag)\n     return tags\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "default list argument",
+    "prompt": "Two calls in a row: add_tag('a'), then add_tag('b'). What did the second call return before this change, what does it return now, and why?",
+    "choices": [],
+    "answerKey": "Before, ['a', 'b']: a default value is created once, when the function is defined, and every call shared that list, so 'a' was still in it. Now ['b']: the default is None and each call makes a new list.",
+    "rubric": [
+      "the second call returned ['a', 'b'] before and returns ['b'] now",
+      "the default list was created once and shared by every call; None with a new list per call fixes it"
+    ]
+  },
+  "answers": [
+    {
+      "text": "Old: ['a', 'b'] because the [] default is built once and reused between calls. New: ['b'] since each call creates a fresh list when tags is None.",
+      "accepted": true
+    },
+    {
+      "text": "before ['a','b'] (shared mutable default), after ['b']",
+      "accepted": true
+    },
+    {
+      "text": "Both return ['b']; the change is only style.",
+      "accepted": false
+    },
+    {
+      "text": "Before, it raised a TypeError because a list cannot be a default argument.",
+      "accepted": false
+    }
+  ]
+}

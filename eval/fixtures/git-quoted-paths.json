@@ -1,0 +1,35 @@
+{
+  "name": "git-quoted-paths",
+  "source": "real change in the muellim repository: Task 3 review fix to src/diff/chunks.ts, parseDiff decodes paths git wraps in quotes",
+  "diff": "diff --git a/src/diff/chunks.ts b/src/diff/chunks.ts\n--- a/src/diff/chunks.ts\n+++ b/src/diff/chunks.ts\n@@ -3,11 +3,38 @@ import type { Chunk } from '../types.js'\n \n const HUNK_HEADER = /^@@ -\\d+(?:,(\\d+))? \\+\\d+(?:,(\\d+))? @@/\n \n+const SIMPLE_ESCAPES: Record<string, number> = {\n+  a: 0x07,\n+  b: 0x08,\n+  f: 0x0c,\n+  n: 0x0a,\n+  r: 0x0d,\n+  t: 0x09,\n+  v: 0x0b,\n+  '\"': 0x22,\n+  '\\\\': 0x5c,\n+}\n+\n /** A key for one added or removed line. It ignores line numbers and trailing spaces. */\n export function lineKey(file: string, line: string): string {\n   return createHash('sha256').update(`${file}\\0${line.trimEnd()}`).digest('hex').slice(0, 16)\n }\n \n+/** Decodes a path git wrapped in double quotes (C escapes, UTF-8 bytes); other paths come back unchanged. */\n+export function unquotePath(path: string): string {\n+  if (path.length < 2 || !path.startsWith('\"') || !path.endsWith('\"')) return path\n+  const encoder = new TextEncoder()\n+  const bytes: number[] = []\n+  // One token is an octal escape, a simple escape, a run of plain text, or a lone backslash.\n+  for (const match of path.slice(1, -1).matchAll(/\\\\([0-7]{3})|\\\\([\"\\\\abfnrtv])|[^\\\\]+|\\\\/gu)) {\n+    const [token, octal, simple] = match\n+    if (octal !== undefined) bytes.push(Number.parseInt(octal, 8))\n+    else if (simple !== undefined) bytes.push(SIMPLE_ESCAPES[simple] ?? 0x5c)\n+    else bytes.push(...encoder.encode(token))\n+  }\n+  return new TextDecoder().decode(Uint8Array.from(bytes))\n+}\n+\n /** Splits a unified diff (git or GitHub) into one chunk per hunk. */\n export function parseDiff(diff: string): Chunk[] {\n   const chunks: Chunk[] = []\n@@ -41,10 +68,10 @@ export function parseDiff(diff: string): Chunk[] {\n       current = null\n     } else if (line.startsWith('--- ')) {\n       const path = line.slice(4).trim()\n-      if (path !== '/dev/null') file = path.replace(/^a\\//, '')\n+      if (path !== '/dev/null') file = unquotePath(path).replace(/^a\\//, '')\n     } else if (line.startsWith('+++ ')) {\n       const path = line.slice(4).trim()\n-      if (path !== '/dev/null') file = path.replace(/^b\\//, '')\n+      if (path !== '/dev/null') file = unquotePath(path).replace(/^b\\//, '')\n     } else if (file) {\n       const match = HUNK_HEADER.exec(line)\n       if (match) {\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "non-ASCII file names in a diff",
+    "prompt": "A change edits src/café.ts. git prints its header as --- \"a/src/caf\\303\\251.ts\". What file name does parseDiff record after this change, and what went wrong before it?",
+    "choices": [],
+    "answerKey": "It records src/café.ts: unquotePath drops the quotes, decodes the octal bytes as UTF-8, and then the a/ prefix comes off. Before, the raw quoted text with a/ and the escapes still in it became the file name, so path patterns could not match it and the keys named a file that does not exist.",
+    "rubric": [
+      "the quotes and octal escapes are decoded to src/café.ts, with the a/ prefix removed",
+      "before, the raw quoted text (with a/ and the escapes) became the file name, so path-based filtering and keys broke"
+    ]
+  },
+  "answers": [
+    {
+      "text": "src/café.ts. unquotePath decodes the \\303\\251 bytes as UTF-8 and drops the quotes, then a/ is stripped. Before, the name stayed as the quoted string with a/ inside, so ignore and secret patterns could not match it.",
+      "accepted": true
+    },
+    {
+      "text": "café.ts under src, decoded. previously the file was literally \"a/src/caf\\303\\251.ts\" with the quotes, so filters and ignore rules missed it",
+      "accepted": true
+    },
+    {
+      "text": "src/caf\\303\\251.ts, because git paths are always stored in their escaped form.",
+      "accepted": false
+    },
+    {
+      "text": "src/café.ts. The change only makes the transcript look nicer.",
+      "accepted": false
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "diff-prefix-config",
+  "source": "real change in the muellim repository: fix(git): pin a/ and b/ diff prefixes so the path filters match under any diff config",
+  "diff": "diff --git a/src/git/git.ts b/src/git/git.ts\n--- a/src/git/git.ts\n+++ b/src/git/git.ts\n@@ -9,6 +9,9 @@ const run = promisify(execFile)\n /** The hash of git's empty tree: the base for a repository with no commits. */\n export const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'\n \n+/** Fixed `a/` and `b/` paths whatever the user's diff config, so the path filters match. */\n+const PLAIN_DIFF = ['--no-color', '--src-prefix=a/', '--dst-prefix=b/']\n+\n export interface Git {\n   readonly root: string\n   /** Where the branch left the default branch, or HEAD when there is no default branch. */\n@@ -71,7 +74,7 @@ export function createGit(root: string): Git {\n     async diffSince(base) {\n       const tracked = await git(root, [\n         'diff',\n-        '--no-color',\n+        ...PLAIN_DIFF,\n         '--no-ext-diff',\n         '--function-context',\n         base,\n@@ -82,7 +85,7 @@ export function createGit(root: string): Git {\n       const added: string[] = []\n       for (const path of untracked) {\n         added.push(\n-          await git(root, ['diff', '--no-color', '--no-index', '--', '/dev/null', path], [0, 1]),\n+          await git(root, ['diff', ...PLAIN_DIFF, '--no-index', '--', '/dev/null', path], [0, 1]),\n         )\n       }\n       return [tracked, ...added].join('')\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "diff prefixes and the ignore list",
+    "prompt": "A user has diff.mnemonicPrefix = true in their global git config, and .muellimignore contains /secrets/. They change secrets/prod.yml. What did the old diffSince let through, and how do the new flags fix it?",
+    "choices": [],
+    "answerKey": "Under mnemonicPrefix git prints c/ and w/ instead of a/ and b/. parseDiff strips only a/ and b/, so the old code recorded w/secrets/prod.yml, the anchored /secrets/ pattern did not match, and the chunk went to the AI. --src-prefix=a/ and --dst-prefix=b/ make git print a/ and b/ whatever the config, so the path is secrets/prod.yml and the ignore rule drops it.",
+    "rubric": [
+      "the user's config changed the prefixes, so the parsed path kept w/ and the anchored ignore pattern no longer matched, letting the ignored file reach the AI",
+      "the explicit --src-prefix=a/ and --dst-prefix=b/ restore the prefixes parseDiff strips, so the ignore rule matches again"
+    ]
+  },
+  "answers": [
+    {
+      "text": "Old: git wrote w/secrets/prod.yml, parseDiff only strips a/ and b/, so the path kept w/ and /secrets/ did not match, and the file went to the AI. The new flags force a/ and b/ so the path is secrets/prod.yml and gets filtered.",
+      "accepted": true
+    },
+    {
+      "text": "mnemonic prefix gives c/ and w/ paths, the anchored ignore misses, so it leaks. forcing the src/dst prefix to a/ b/ makes the path clean again so it is ignored",
+      "accepted": true
+    },
+    {
+      "text": "Nothing changed; .muellimignore is applied before git runs, so the prefix never mattered.",
+      "accepted": false
+    },
+    {
+      "text": "The flags turn off colour so the diff can be parsed.",
+      "accepted": false
+    }
+  ]
+}

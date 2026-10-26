@@ -1,0 +1,35 @@
+{
+  "name": "aware-datetime-compare",
+  "source": "synthetic seed",
+  "diff": "diff --git a/app/tokens.py b/app/tokens.py\n--- a/app/tokens.py\n+++ b/app/tokens.py\n@@ -1,6 +1,6 @@\n-from datetime import datetime\n+from datetime import datetime, timezone\n \n \n def is_expired(token):\n     # token.expires_at comes from the database as an aware UTC datetime\n-    return token.expires_at < datetime.now()\n+    return token.expires_at < datetime.now(timezone.utc)\n",
+  "question": {
+    "id": "q1",
+    "kind": "open",
+    "topic": "naive and aware datetimes",
+    "prompt": "expires_at is a timezone-aware UTC datetime. What happened when the old is_expired ran, and what does passing timezone.utc change?",
+    "choices": [],
+    "answerKey": "datetime.now() returns a naive datetime, and Python refuses to order an aware datetime against a naive one, so the old code raised TypeError: can't compare offset-naive and offset-aware datetimes. datetime.now(timezone.utc) is aware and in UTC, so the comparison works and both sides are in the same zone.",
+    "rubric": [
+      "comparing the aware expires_at with the naive datetime.now() raised a TypeError",
+      "now(timezone.utc) gives an aware UTC time, so the comparison is valid and in the same zone"
+    ]
+  },
+  "answers": [
+    {
+      "text": "TypeError: can't compare offset-naive and offset-aware datetimes. Passing timezone.utc makes now() aware and UTC so the < works.",
+      "accepted": true
+    },
+    {
+      "text": "the old one blew up (naive vs aware compare). now both sides are aware UTC",
+      "accepted": true
+    },
+    {
+      "text": "It worked but was off by the server's UTC offset, so tokens expired early or late.",
+      "accepted": false
+    },
+    {
+      "text": "It always returned False, because naive datetimes compare as earlier.",
+      "accepted": false
+    }
+  ]
+}
