@@ -20,3 +20,5 @@ jobs:
       - run: npm ci
       - run: npm run gate
       - run: npm run build
+      - run: npm run build:action
+      - run: git diff --exit-code action/index.js

@@ -15,6 +15,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "build:action": "esbuild src/action/entry.ts --bundle --platform=node --target=node22 --format=esm --minify --legal-comments=none --outfile=action/index.js",
     "gate": "biome check . && tsc --noEmit && vitest run --passWithNoTests",
     "eval": "tsx eval/run.ts"
   },
@@ -30,6 +31,7 @@
     "@ai-sdk/provider": "4.0.34",
     "@biomejs/biome": "2.6.3",
     "@types/node": "26.6.5",
+    "esbuild": "0.28.2",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vitest": "5.0.5"
