@@ -77,6 +77,18 @@ export const en = {
     comment: (short: string, s: Score, topics: string[]) =>
       `**Muellim:** passed at \`${short}\`. ${scoreLine(s)}${topics.length > 0 ? `\n\nTopics: \`${topics.join(', ')}\`.` : ''}`,
   },
+  action: {
+    pending: (n: number) => `Run: muellim pr ${n}`,
+    skipped: 'Skipped',
+    skippedByAuthor: 'Skipped by the author',
+    passed: (s: Score) =>
+      `${s.firstTry} right first time, ${s.onRetry} on retry, ${s.taught} taught`,
+    apiFailed: (status: number, method: string, path: string) =>
+      `GitHub returned ${status} for ${method} ${path}.`,
+    apiUnreachable: (method: string, path: string) =>
+      `Muellim could not reach GitHub for ${method} ${path}.`,
+    missingEnv: 'The Muellim action needs its token and the GitHub event. Check the workflow file.',
+  },
   transcript: {
     runHeading: (kind: RunKind, at: string) => `## ${kind} run, ${at}`,
     keysHeading: '### Answer keys, written before any answer',
