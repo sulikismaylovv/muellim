@@ -82,7 +82,7 @@ export const en = {
   },
   init: {
     written: (path: string) =>
-      `Wrote ${path}. Commit it, then make the muellim check required in your repository's branch settings.`,
+      `Wrote ${path}. Commit it and merge it to your default branch, because the check runs only from there. Once it has run on a pull request, make the muellim check required in your repository's branch settings.`,
   },
   action: {
     pending: (n: number) => `Run: muellim pr ${n}`,

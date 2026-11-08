@@ -38,12 +38,12 @@ afterEach(async () => {
 })
 
 describe('initCommand', () => {
-  it('writes the workflow and tells the user to make the check required', async () => {
+  it('writes the workflow and says to merge it before making the check required', async () => {
     const root = await tempRoot()
     const shown: string[] = []
     await initCommand({ root, show: (t) => shown.push(t) }, {})
     expect(await readFile(join(root, WORKFLOW_PATH), 'utf8')).toBe(WORKFLOW)
-    expect(shown.join('\n')).toContain('required')
+    expect(shown.join('\n')).toMatch(/merge it to your default branch.*Once it has run.*required/)
   })
 
   it('holds the exact workflow text', () => {
