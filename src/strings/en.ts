@@ -71,6 +71,8 @@ export const en = {
   pr: {
     fetching: (n: number) => `Fetching pull request #${n}...`,
     saved: (n: number, path: string) => `Pass for #${n} saved to ${path}.`,
+    comment: (short: string, s: Score, topics: string[]) =>
+      `**Muellim:** passed at \`${short}\`. ${scoreLine(s)}${topics.length > 0 ? `\n\nTopics: ${topics.join(', ')}.` : ''}`,
   },
   transcript: {
     runHeading: (kind: RunKind, at: string) => `## ${kind} run, ${at}`,
