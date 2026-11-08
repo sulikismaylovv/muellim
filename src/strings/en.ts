@@ -30,6 +30,9 @@ const errors: Record<ErrorCode, string> = {
   budget: 'This run reached its limit of AI calls or tokens. Nothing was marked as passed.',
   'gh-auth': 'The GitHub CLI is missing or not signed in. Run "gh auth login", then try again.',
   'gh-failed': 'The GitHub CLI could not fetch that pull request.',
+  'workflow-exists': 'The workflow file already exists. Run "muellim init --force" to replace it.',
+  'comment-failed':
+    'Your pass is saved, but the comment was not posted. Run "muellim pr" again to post it.',
   aborted: 'Run stopped. Nothing was marked as passed. The partial transcript is kept.',
 }
 
@@ -44,6 +47,8 @@ export const en = {
     pr: 'Quiz what is left of a pull request and save the pass for the GitHub check.',
     prNumber: 'the pull request number',
     badNumber: 'Give the pull request as a positive whole number, for example 42.',
+    init: 'Write the GitHub workflow that runs the muellim check.',
+    force: 'replace the workflow file if it already exists',
   },
   start: {
     goalPrompt: 'What are you building in this session?',
@@ -71,6 +76,25 @@ export const en = {
   pr: {
     fetching: (n: number) => `Fetching pull request #${n}...`,
     saved: (n: number, path: string) => `Pass for #${n} saved to ${path}.`,
+    posted: (n: number) => `Posted the pass on pull request #${n}.`,
+    comment: (short: string, s: Score, topics: string[]) =>
+      `**Muellim:** passed at \`${short}\`. ${scoreLine(s)}${topics.length > 0 ? `\n\nTopics: \`${topics.join(', ')}\`.` : ''}`,
+  },
+  init: {
+    written: (path: string) =>
+      `Wrote ${path}. Commit it and merge it to your default branch, because the check runs only from there. Once it has run on a pull request, make the muellim check required in your repository's branch settings.`,
+  },
+  action: {
+    pending: (n: number) => `Run: muellim pr ${n}`,
+    skipped: 'Skipped',
+    skippedByAuthor: 'Skipped by the author',
+    passed: (s: Score) =>
+      `${s.firstTry} right first time, ${s.onRetry} on retry, ${s.taught} taught`,
+    apiFailed: (status: number, method: string, path: string) =>
+      `GitHub returned ${status} for ${method} ${path}.`,
+    apiUnreachable: (method: string, path: string) =>
+      `Muellim could not reach GitHub for ${method} ${path}.`,
+    missingEnv: 'The Muellim action needs its token and the GitHub event. Check the workflow file.',
   },
   transcript: {
     runHeading: (kind: RunKind, at: string) => `## ${kind} run, ${at}`,

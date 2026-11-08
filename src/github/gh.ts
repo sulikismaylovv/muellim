@@ -5,6 +5,7 @@ import { MuellimError } from '../errors.js'
 export interface Gh {
   prDiff(pullRequest: number): Promise<string>
   prHead(pullRequest: number): Promise<string>
+  prComment(pullRequest: number, body: string): Promise<void>
 }
 
 export type Exec = (file: string, args: string[], cwd: string) => Promise<{ stdout: string }>
@@ -36,5 +37,8 @@ export function createGh(cwd: string, exec: Exec = defaultExec): Gh {
     prDiff: (n) => gh(['pr', 'diff', String(n), '--color', 'never']),
     prHead: async (n) =>
       (await gh(['pr', 'view', String(n), '--json', 'headRefOid', '--jq', '.headRefOid'])).trim(),
+    prComment: async (n, body) => {
+      await gh(['pr', 'comment', String(n), '--body', body])
+    },
   }
 }

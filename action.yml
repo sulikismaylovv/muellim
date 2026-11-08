@@ -1,0 +1,9 @@
+name: Muellim check
+description: Sets the muellim status on a pull request from the author's quiz result.
+inputs:
+  token:
+    description: The token used to read the pull request and set its status.
+    default: ${{ github.token }}
+runs:
+  using: node24
+  main: action/index.js

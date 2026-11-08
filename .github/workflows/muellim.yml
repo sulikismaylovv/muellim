@@ -1,0 +1,21 @@
+name: muellim
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  statuses: write
+  pull-requests: read
+
+jobs:
+  set-status:
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    steps:
+      # Both events check out the default branch here, never the pull request's code.
+      - uses: actions/checkout@v5
+      - uses: ./

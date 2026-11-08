@@ -36,6 +36,12 @@ Then run these in your repository:
 - `muellim check` quizzes you on the work since your last pass.
 - `muellim pr <number>` quizzes you on what earlier checks did not cover in that pull request, and saves the pass to `.muellim/pr-<number>.json`. It reads the pull request through the GitHub CLI, so run `gh auth login` once first.
 
+## The GitHub check
+
+Run `muellim init` in your repository and merge the workflow it writes to your default branch. Each pull request then gets a `muellim` check. It stays pending until the author runs `muellim pr <number>` and passes. A later push sets it back to pending. To make it block merges, add `muellim` as a required check in your repository's branch settings.
+
+To skip the check, add the `muellim-skip` label, or comment `/muellim skip` as the pull request's author. The label keeps the check skipped through later pushes. A `/muellim skip` comment lasts until the next push.
+
 ## License
 
 Apache-2.0. See `LICENSE`.
