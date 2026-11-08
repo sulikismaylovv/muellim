@@ -36,3 +36,17 @@ export async function markPassed(root: string, session: Session, keys: string[])
 export function savePrResult(root: string, result: PrPassResult): Promise<string> {
   return writeJson(root, `pr-${result.pullRequest}.json`, result)
 }
+
+/** Reads `.muellim/pr-<number>.json`. A missing file means no saved pass; other read or parse errors throw. */
+export async function loadPrResult(
+  root: string,
+  pullRequest: number,
+): Promise<PrPassResult | null> {
+  try {
+    const text = await readFile(join(root, STATE_DIR, `pr-${pullRequest}.json`), 'utf8')
+    return JSON.parse(text) as PrPassResult
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null
+    throw error
+  }
+}

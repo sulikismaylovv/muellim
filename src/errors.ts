@@ -8,6 +8,7 @@ export type ErrorCode =
   | 'budget'
   | 'gh-auth'
   | 'gh-failed'
+  | 'comment-failed'
   | 'aborted'
 
 /** An expected failure. The CLI prints `en.errors[code]` and exits with code 1. */

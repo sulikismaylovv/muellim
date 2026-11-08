@@ -30,6 +30,8 @@ const errors: Record<ErrorCode, string> = {
   budget: 'This run reached its limit of AI calls or tokens. Nothing was marked as passed.',
   'gh-auth': 'The GitHub CLI is missing or not signed in. Run "gh auth login", then try again.',
   'gh-failed': 'The GitHub CLI could not fetch that pull request.',
+  'comment-failed':
+    'Your pass is saved, but the comment was not posted. Run "muellim pr" again to post it.',
   aborted: 'Run stopped. Nothing was marked as passed. The partial transcript is kept.',
 }
 
@@ -71,6 +73,7 @@ export const en = {
   pr: {
     fetching: (n: number) => `Fetching pull request #${n}...`,
     saved: (n: number, path: string) => `Pass for #${n} saved to ${path}.`,
+    posted: (n: number) => `Posted the pass on pull request #${n}.`,
     comment: (short: string, s: Score, topics: string[]) =>
       `**Muellim:** passed at \`${short}\`. ${scoreLine(s)}${topics.length > 0 ? `\n\nTopics: \`${topics.join(', ')}\`.` : ''}`,
   },

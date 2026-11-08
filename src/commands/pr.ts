@@ -1,8 +1,19 @@
+import { MuellimError } from '../errors.js'
 import type { Gh } from '../github/gh.js'
-import { loadSession, markPassed, savePrResult } from '../session/store.js'
+import { passComment } from '../github/marker.js'
+import { loadPrResult, loadSession, markPassed, savePrResult } from '../session/store.js'
 import { en } from '../strings/en.js'
 import type { PrPassResult } from '../types.js'
 import { type AppDeps, quizChanges } from './pipeline.js'
+
+async function postPass(deps: AppDeps & { gh: Gh }, pass: PrPassResult): Promise<void> {
+  try {
+    await deps.gh.prComment(pass.pullRequest, passComment(pass.headSha, pass.score, pass.topics))
+  } catch {
+    throw new MuellimError('comment-failed')
+  }
+  deps.asker.show(en.pr.posted(pass.pullRequest))
+}
 
 /**
  * Quizzes whatever part of the pull request no earlier check covered, then writes
@@ -13,10 +24,13 @@ export async function prCommand(
   pullRequest: number,
 ): Promise<PrPassResult> {
   deps.asker.show(en.pr.fetching(pullRequest))
-  const [diff, headSha] = await Promise.all([
-    deps.gh.prDiff(pullRequest),
-    deps.gh.prHead(pullRequest),
-  ])
+  const headSha = await deps.gh.prHead(pullRequest)
+  const saved = await loadPrResult(deps.git.root, pullRequest)
+  if (saved?.headSha === headSha) {
+    await postPass(deps, saved)
+    return saved
+  }
+  const diff = await deps.gh.prDiff(pullRequest)
   const session = await loadSession(deps.git.root)
   const result = await quizChanges(
     'pr',
@@ -42,5 +56,6 @@ export async function prCommand(
   }
   const path = await savePrResult(deps.git.root, pass)
   deps.asker.show(en.pr.saved(pullRequest, path))
+  await postPass(deps, pass)
   return pass
 }
