@@ -44,6 +44,12 @@ describe('passComment', () => {
     expect(readMarker(body)).toEqual({ head, score })
   })
 
+  it('keeps topics inside a code span so GitHub does not autolink them', () => {
+    const body = passComment(head, score, ['www.evil.example', 'GH-123', 'deadbeefcafe'])
+    expect(body).toContain('Topics: `www.evil.example, GH-123, deadbeefcafe`.')
+    expect(readMarker(body)).toEqual({ head, score })
+  })
+
   it('still reads the marker when there are no topics', () => {
     expect(readMarker(passComment(head, score, []))).toEqual({ head, score })
   })
