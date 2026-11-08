@@ -20,4 +20,4 @@ The binding rules for agents working in this repository.
 
 ## Baseline
 
-- Gate at 94151ee: Biome 72 files, tsc clean, Vitest 17 files / 173 tests.
+- Gate after the GitHub check: Biome 85 files, tsc clean, Vitest 22 files / 222 tests.
