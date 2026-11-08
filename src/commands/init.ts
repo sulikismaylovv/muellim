@@ -18,7 +18,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  muellim:
+  set-status:
     if: github.event_name != 'issue_comment' || github.event.issue.pull_request
     runs-on: ubuntu-latest
     steps:

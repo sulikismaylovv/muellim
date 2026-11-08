@@ -4,6 +4,27 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { initCommand, WORKFLOW, WORKFLOW_PATH } from '../../src/commands/init.js'
 
+// Typed out by hand. Every adopting repository runs this text, so changing it takes two edits.
+const EXPECTED_WORKFLOW = `name: muellim
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  statuses: write
+  pull-requests: read
+
+jobs:
+  set-status:
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    steps:
+      - uses: sulikismaylovv/muellim@v0
+`
+
 const roots: string[] = []
 
 async function tempRoot(): Promise<string> {
@@ -23,6 +44,10 @@ describe('initCommand', () => {
     await initCommand({ root, show: (t) => shown.push(t) }, {})
     expect(await readFile(join(root, WORKFLOW_PATH), 'utf8')).toBe(WORKFLOW)
     expect(shown.join('\n')).toContain('required')
+  })
+
+  it('holds the exact workflow text', () => {
+    expect(WORKFLOW).toBe(EXPECTED_WORKFLOW)
   })
 
   it('never checks out pull request code and asks for the least permissions', () => {
