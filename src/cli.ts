@@ -3,6 +3,7 @@ import { realpathSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { Command, CommanderError, InvalidArgumentError } from 'commander'
 import { checkCommand } from './commands/check.js'
+import { type InitOptions, initCommand } from './commands/init.js'
 import type { AppDeps } from './commands/pipeline.js'
 import { prCommand } from './commands/pr.js'
 import { type StartOptions, startCommand } from './commands/start.js'
@@ -125,6 +126,14 @@ export async function main(argv: string[], cli: CliEnv): Promise<number> {
     .argument('<number>', en.cli.prNumber, parsePullRequest)
     .action(async (pullRequest: number) => {
       await prCommand(await deps(), pullRequest)
+    })
+  program
+    .command('init')
+    .description(en.cli.init)
+    .option('--force', en.cli.force)
+    .action(async (options: InitOptions) => {
+      const git = await openGit(cli.cwd)
+      await initCommand({ root: git.root, show: cli.out }, options)
     })
 
   let interrupt: () => void = () => {}

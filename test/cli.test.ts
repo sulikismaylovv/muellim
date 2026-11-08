@@ -224,4 +224,13 @@ describe('main', () => {
     expect(transcript.split(en.transcript.abandoned).length - 1).toBe(1)
     expect((await loadSession(repo.dir))?.passed).toEqual(before)
   })
+
+  it('writes the workflow on init and refuses a second time', async () => {
+    const repo = await tempRepo()
+    const { env, err } = cliEnv(repo.dir)
+    expect(await main(['init'], env)).toBe(0)
+    expect(await main(['init'], env)).toBe(1)
+    expect(err).toEqual([en.errors['workflow-exists']])
+    expect(await main(['init', '--force'], env)).toBe(0)
+  })
 })

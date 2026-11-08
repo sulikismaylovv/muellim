@@ -9,6 +9,7 @@ export type ErrorCode =
   | 'gh-auth'
   | 'gh-failed'
   | 'comment-failed'
+  | 'workflow-exists'
   | 'aborted'
 
 /** An expected failure. The CLI prints `en.errors[code]` and exits with code 1. */
