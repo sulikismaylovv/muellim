@@ -39,7 +39,7 @@ function cliEnv(cwd: string, makeLlm: () => LlmClient = () => new FakeLlm({})) {
       transcript: createTranscript(git.root),
       makeLlm,
       now: () => new Date('2026-10-26T12:00:00.000Z'),
-      gh: { prDiff: async () => '', prHead: async () => 'abc' },
+      gh: { prDiff: async () => '', prHead: async () => 'abc', prComment: async () => {} },
     }),
   }
   return { env, out, err }

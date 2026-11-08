@@ -37,7 +37,11 @@ const plan = {
   ],
 }
 
-const gh: Gh = { prDiff: async () => PR_DIFF, prHead: async () => 'def5678' }
+const gh: Gh = {
+  prDiff: async () => PR_DIFF,
+  prHead: async () => 'def5678',
+  prComment: async () => {},
+}
 
 async function deps(dir: string, answers: string[], llm: FakeLlm) {
   const asker = new ScriptedAsker(answers)
@@ -95,6 +99,7 @@ describe('pr', () => {
         throw Object.assign(new Error('gh-auth'), { code: 'gh-auth' })
       },
       prHead: async () => 'x',
+      prComment: async () => {},
     }
     await expect(prCommand({ ...app, gh: failing }, 1)).rejects.toMatchObject({ code: 'gh-auth' })
   })

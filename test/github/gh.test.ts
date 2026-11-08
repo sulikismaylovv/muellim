@@ -23,6 +23,16 @@ describe('createGh', () => {
     ])
   })
 
+  it('posts a comment through gh with the body as one argument', async () => {
+    const calls: string[][] = []
+    const exec: Exec = async (_file, args) => {
+      calls.push(args)
+      return { stdout: '' }
+    }
+    await createGh('/repo', exec).prComment(42, 'hello; rm -rf /')
+    expect(calls).toEqual([['pr', 'comment', '42', '--body', 'hello; rm -rf /']])
+  })
+
   it('maps a missing sign-in to gh-auth', async () => {
     const gh = createGh(
       '/repo',
